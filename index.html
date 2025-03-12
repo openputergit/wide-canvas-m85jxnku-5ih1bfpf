@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VS Code Clone</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #1e1e1e;
+            --secondary-bg: #252526;
+            --sidebar-bg: #333333;
+            --active-tab: #1e1e1e;
+            --inactive-tab: #2d2d2d;
+            --highlight: #264f78;
+            --text-primary: #d4d4d4;
+            --text-secondary: #858585;
+            --border-color: #474747;
+            --status-bar: #007acc;
+            --menu-bg: #252526;
+            --menu-hover: #094771;
+            --syntax-keyword: #569cd6;
+            --syntax-string: #ce9178;
+            --syntax-comment: #6a9955;
+            --syntax-class: #4ec9b0;
+            --syntax-function: #dcdcaa;
+            --syntax-number: #b5cea8;
+            --syntax-property: #9cdcfe;
+            --syntax-operator: #d4d4d4;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            color: var(--text-primary);
+            background-color: var(--primary-bg);
+        }
+
+        .code-font {
+            font-family: 'Source Code Pro', monospace;
+        }
+
+        .monaco-editor {
+            height: 100%;
+            width: 100%;
+        }
+
+        .sidebar-item:hover {
+            background-color: #2a2d2e;
+        }
+
+        .sidebar-item.active {
+            background-color: #37373d;
+        }
+
+        .tab:hover {
+            background-color: var(--inactive-tab);
+        }
+
+        .tab.active {
+            background-color: var(--active-tab);
+            border-bottom: 2px solid var(--status-bar);
+        }
+
+        .explorer-file:hover {
+            background-color: #2a2d2e;
+        }
+
+        .explorer-file.active {
+            background-color: #37373d;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--secondary-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        /* Menu styles */
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            background-color: var(--menu-bg);
+            border: 1px solid var(--border-color);
+            z-index: 50;
+            min-width: 200px;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .dropdown-item {
+            padding: 6px 20px;
+            cursor: pointer;
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--menu-hover);
+        }
+
+        .menu-separator {
+            height: 1px;
+            background-color: var(--border-color);
+            margin: 4px 0;
+        }
+
+        .show {
+            display: block;
+        }
+
+        /* Context menu */
+        .context-menu {
+            position: absolute;
+            display: none;
+            background-color: var(--menu-bg);
+            border: 1px solid var(--border-color);
+            z-index: 100;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Problems, Output, Terminal panels */
+        .bottom-panel {
+            height: 0;
+            overflow: hidden;
+            transition: height 0.3s ease;
+        }
+
+        .bottom-panel.active {
+            height: 200px;
+        }
+
+        /* Intellisense popup */
+        .intellisense {
+            display: none;
+            position: absolute;
+            background-color: var(--menu-bg);
+            border: 1px solid var(--border-color);
+            z-index: 100;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .suggestion {
+            padding: 4px 20px 4px 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .suggestion:hover, .suggestion.selected {
+            background-color: var(--menu-hover);
+        }
+
+        .suggestion-icon {
+            margin-right: 8px;
+        }
+
+        /* Find/Replace panel */
+        .find-replace {
+            display: none;
+            position: absolute;
+            top: 5px;
+            right: 15px;
+            background-color: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            z-index: 40;
+            border-radius: 4px;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Theme styles */
+        .theme-dark {
+            --primary-bg: #1e1e1e;
+            --secondary-bg: #252526;
+            --sidebar-bg: #333333;
+            --active-tab: #1e1e1e;
+            --inactive-tab: #2d2d2d;
+            --highlight: #264f78;
+            --text-primary: #d4d4d4;
+            --text-secondary: #858585;
+            --border-color: #474747;
+        }
+
+        .theme-light {
+            --primary-bg: #ffffff;
+            --secondary-bg: #f3f3f3;
+            --sidebar-bg: #f3f3f3;
+            --active-tab: #ffffff;
+            --inactive-tab: #ececec;
+            --highlight: #cee3f8;
+            --text-primary: #333333;
+            --text-secondary: #616161;
+            --border-color: #d4d4d4;
+        }
+
+        .theme-high-contrast {
+            --primary-bg: #000000;
+            --secondary-bg: #0d0d0d;
+            --sidebar-bg: #0d0d0d;
+            --active-tab: #000000;
+            --inactive-tab: #1a1a1a;
+            --highlight: #0050a0;
+            --text-primary: #ffffff;
+            --text-secondary: #c0c0c0;
+            --border-color: #6c6c6c;
+        }
+
+        /* Status bar animations */
+        @keyframes progressAnimation {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        .progress-bar {
+            height: 2px;
+            background-color: #00a3ff;
+            position: absolute;
+            top: 0;
+            left: 0;
+            animation: progressAnimation 2s ease-in-out;
+        }
+
+        /* Minimap */
+        .minimap {
+            width: 100px;
+            height: 100%;
+            position: absolute;
+            right: 0;
+            top: 0;
+            background-color: var(--secondary-bg);
+            opacity: 0.7;
+            border-left: 1px solid var(--border-color);
+            z-index: 20;
+            display: none; /* Hidden by default, will be shown based on settings */
+        }
+
+        .minimap.active {
+            display: block;
+        }
+
+        .minimap-content {
+            width: 100%;
+            height: 100%;
+            font-size: 1px;
+            line-height: 1px;
+            color: rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+        }
+
+        /* Custom editor styles */
+        .editor-area {
+            font-family: 'Source Code Pro', monospace;
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+            white-space: pre;
+            tab-size: 4;
+            overflow: auto;
+            line-height: 1.5;
+            padding: 0;
+            counter-reset: line;
+        }
+
+        .editor-line {
+            display: flex;
+        }
+
+        .line-number {
+            color: var(--text-secondary);
+            text-align: right;
+            padding-right: 10px;
+            user-select: none;
+            min-width: 40px;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .line-content {
+            flex-grow: 1;
+            padding-left: 10px;
+            position: relative;
+        }
+
+        .cursor {
+            position: absolute;
+            width: 2px;
+            height: 18px;
+            background-color: #fff;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            from, to { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Language-specific syntax highlighting */
+        .keyword {
+            color: var(--syntax-keyword);
+        }
+
+        .string {
+            color: var(--syntax-string);
+        }
+
+        .comment {
+            color: var(--syntax-comment);
+        }
+
+        .class {
+            color: var(--syntax-class);
+        }
+
+        .function {
+            color: var(--syntax-function);
+        }
+
+        .number {
+            color: var(--syntax-number);
+        }
+
+        .property {
+            color: var(--syntax-property);
+        }
+
+        .operator {
+            color: var(--syntax-operator);
+        }
+
+        .tag {
+            color: var(--syntax-keyword);
+        }
+
+        .attribute {
+            color: var(--syntax-property);
+        }
+
+        /* Command palette */
+        .command-palette {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            max-width: 90%;
+            background-color: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            z-index: 200;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        .command-input {
+            width: 100%;
+            padding: 10px 15px;
+            background-color: var(--secondary-bg);
+            color: var(--text-primary);
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            outline: none;
+        }
+
+        .command-results {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .command-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .command-item:hover, .command-item.selected {
+            background-color: var(--menu-hover);
+        }
+
+        .command-icon {
+            margin-right: 10px;
+            opacity: 0.8;
+        }
+
+        /* New file dialog */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            width: 400px;
+            max-width: 90%;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 500;
+        }
+
+        .modal-body {
+            padding: 15px;
+        }
+
+        .modal-footer {
+            padding: 10px 15px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border-radius: 3px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+
+        .btn-primary {
+            background-color: #0e639c;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #1177bb;
+        }
+
+        .btn-secondary {
+            background-color: #3a3d41;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #45494e;
+        }
+
+        .resizer {
+            width: 5px;
+            cursor: ew-resize;
+            background-color: var(--primary-bg);
+        }
+
+        .resizer:hover, .resizer.resizing {
+            background-color: var(--status-bar);
+        }
+        
+        .empty-file {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+    </style>
+</head>
+<body class="text-gray-100 flex flex-col h-screen">
+    <!-- Top menu bar -->
+    <div class="menu-bar flex text-sm border-b border-gray-700 bg-gray-900">
+        <div class="menu-item px-2 py-1 hover:bg-gray-800 cursor-pointer" id="file-menu">File</div>
+        <div class="menu-item px-2 py-1 hover:bg-gray-800 cursor-pointer" id="edit-menu">Edit</div>
+        <div class="menu-item px-2 py-1 hover:bg-gray-800 cursor-pointer" id="selection-menu">Selection</div>
+        <div class="menu-item px-2 py-1 hover:bg-gray-800 cursor-pointer" id="view-menu">View</div>
+        <div class="menu-item px-2 py-1 hover:bg-gray-800 cursor-pointer" id="go-menu">Go</div>
+        <div class="menu-item px-2 py-1 hover:bg-gray-800 cursor-pointer" id="run-menu">Run</div>
+        <div class="menu-item px-2 py-1 hover:bg-gray-800 cursor-pointer" id="terminal-menu">Terminal</div>
+        <div class="menu-item px-2 py-1 hover:bg-gray-800 cursor-pointer" id="help-menu">Help</div>
+    </div>
+
+    <!-- Dropdown menus -->
+    <div id="file-dropdown" class="dropdown-menu">
+        <div class="dropdown-item" id="new-file">New File <span class="float-right text-xs text-gray-400">Ctrl+N</span></div>
+        <div class="dropdown-item">New Window <span class="float-right text-xs text-gray-400">Ctrl+Shift+N</span></div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item" id="open-file">Open File... <span class="float-right text-xs text-gray-400">Ctrl+O</span></div>
+        <div class="dropdown-item">Open Folder... <span class="float-right text-xs text-gray-400">Ctrl+K Ctrl+O</span></div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item" id="save-file">Save <span class="float-right text-xs text-gray-400">Ctrl+S</span></div>
+        <div class="dropdown-item">Save As... <span class="float-right text-xs text-gray-400">Ctrl+Shift+S</span></div>
+        <div class="dropdown-item">Save All <span class="float-right text-xs text-gray-400">Ctrl+K S</span></div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item">Auto Save</div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item" id="preferences">Preferences</div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item">Exit <span class="float-right text-xs text-gray-400">Ctrl+Q</span></div>
+    </div>
+
+    <div id="edit-dropdown" class="dropdown-menu">
+        <div class="dropdown-item" id="undo">Undo <span class="float-right text-xs text-gray-400">Ctrl+Z</span></div>
+        <div class="dropdown-item" id="redo">Redo <span class="float-right text-xs text-gray-400">Ctrl+Y</span></div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item" id="cut">Cut <span class="float-right text-xs text-gray-400">Ctrl+X</span></div>
+        <div class="dropdown-item" id="copy">Copy <span class="float-right text-xs text-gray-400">Ctrl+C</span></div>
+        <div class="dropdown-item" id="paste">Paste <span class="float-right text-xs text-gray-400">Ctrl+V</span></div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item" id="find">Find <span class="float-right text-xs text-gray-400">Ctrl+F</span></div>
+        <div class="dropdown-item" id="replace">Replace <span class="float-right text-xs text-gray-400">Ctrl+H</span></div>
+    </div>
+
+    <div id="selection-dropdown" class="dropdown-menu">
+        <div class="dropdown-item" id="select-all">Select All <span class="float-right text-xs text-gray-400">Ctrl+A</span></div>
+        <div class="dropdown-item">Expand Selection <span class="float-right text-xs text-gray-400">Shift+Alt+→</span></div>
+        <div class="dropdown-item">Shrink Selection <span class="float-right text-xs text-gray-400">Shift+Alt+←</span></div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item">Copy Line Up <span class="float-right text-xs text-gray-400">Shift+Alt+↑</span></div>
+        <div class="dropdown-item">Copy Line Down <span class="float-right text-xs text-gray-400">Shift+Alt+↓</span></div>
+        <div class="dropdown-item">Move Line Up <span class="float-right text-xs text-gray-400">Alt+↑</span></div>
+        <div class="dropdown-item">Move Line Down <span class="float-right text-xs text-gray-400">Alt+↓</span></div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item">Add Cursor Above <span class="float-right text-xs text-gray-400">Ctrl+Alt+↑</span></div>
+        <div class="dropdown-item">Add Cursor Below <span class="float-right text-xs text-gray-400">Ctrl+Alt+↓</span></div>
+    </div>
+
+    <div id="view-dropdown" class="dropdown-menu">
+        <div class="dropdown-item" id="command-palette">Command Palette... <span class="float-right text-xs text-gray-400">Ctrl+Shift+P</span></div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item" id="appearance">Appearance</div>
+        <div class="dropdown-item">Editor Layout</div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item" id="toggle-explorer">Explorer <span class="float-right text-xs text-gray-400">Ctrl+Shift+E</span></div>
+        <div class="dropdown-item" id="toggle-search">Search <span class="float-right text-xs text-gray-400">Ctrl+Shift+F</span></div>
+        <div class="dropdown-item" id="toggle-git">Source Control <span class="float-right text-xs text-gray-400">Ctrl+Shift+G</span></div>
+        <div class="dropdown-item" id="toggle-debug">Debug <span class="float-right text-xs text-gray-400">Ctrl+Shift+D</span></div>
+        <div class="dropdown-item" id="toggle-extensions">Extensions <span class="float-right text-xs text-gray-400">Ctrl+Shift+X</span></div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item" id="toggle-problems">Problems <span class="float-right text-xs text-gray-400">Ctrl+Shift+M</span></div>
+        <div class="dropdown-item" id="toggle-output">Output <span class="float-right text-xs text-gray-400">Ctrl+Shift+U</span></div>
+        <div class="dropdown-item" id="toggle-terminal">Terminal <span class="float-right text-xs text-gray-400">Ctrl+`</span></div>
+    </div>
+    
+    <div id="go-dropdown" class="dropdown-menu">
+        <div class="dropdown-item" id="go-to-file">Go to File... <span class="float-right text-xs text-gray-400">Ctrl+P</span></div>
+        <div class="dropdown-item">Go to Symbol... <span class="float-right text-xs text-gray-400">Ctrl+Shift+O</span></div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item" id="go-to-line">Go to Line/Column... <span class="float-right text-xs text-gray-400">Ctrl+G</span></div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item">Go to Definition <span class="float-right text-xs text-gray-400">F12</span></div>
+        <div class="dropdown-item">Go to Declaration <span class="float-right text-xs text-gray-400">Ctrl+F12</span></div>
+        <div class="dropdown-item">Go to Type Definition <span class="float-right text-xs text-gray-400">Ctrl+T</span></div>
+        <div class="dropdown-item">Go to Implementation <span class="float-right text-xs text-gray-400">Ctrl+F12</span></div>
+        <div class="dropdown-item">Go to References <span class="float-right text-xs text-gray-400">Shift+F12</span></div>
+    </div>
+    
+    <div id="run-dropdown" class="dropdown-menu">
+        <div class="dropdown-item" id="start-debugging">Start Debugging <span class="float-right text-xs text-gray-400">F5</span></div>
+        <div class="dropdown-item" id="run-without-debugging">Run Without Debugging <span class="float-right text-xs text-gray-400">Ctrl+F5</span></div>
+        <div class="dropdown-item">Stop Debugging <span class="float-right text-xs text-gray-400">Shift+F5</span></div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item">Restart Debugging <span class="float-right text-xs text-gray-400">Ctrl+Shift+F5</span></div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item">Add Configuration...</div>
+    </div>
+    
+    <div id="terminal-dropdown" class="dropdown-menu">
+        <div class="dropdown-item" id="new-terminal">New Terminal <span class="float-right text-xs text-gray-400">Ctrl+Shift+`</span></div>
+        <div class="dropdown-item">Split Terminal</div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item">Run Task... <span class="float-right text-xs text-gray-400">Ctrl+Shift+B</span></div>
+        <div class="dropdown-item">Configure Tasks...</div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item">Kill Terminal</div>
+    </div>
+    
+    <div id="help-dropdown" class="dropdown-menu">
+        <div class="dropdown-item" id="welcome">Welcome</div>
+        <div class="dropdown-item">Interactive Playground</div>
+        <div class="dropdown-item">Documentation</div>
+        <div class="dropdown-item">Release Notes</div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item">Keyboard Shortcuts Reference <span class="float-right text-xs text-gray-400">Ctrl+K Ctrl+R</span></div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item">Report Issue</div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item" id="about">About</div>
+    </div>
+
+    <!-- Main application container -->
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar (Activity Bar) -->
+        <div class="bg-gray-900 w-12 flex flex-col items-center py-2 border-r border-gray-800" id="activity-bar">
+            <div class="sidebar-item p-2 mb-2 rounded hover:bg-gray-800 active" data-panel="explorer">
+                <i class="bi bi-files text-xl"></i>
+            </div>
+            <div class="sidebar-item p-2 mb-2 rounded hover:bg-gray-800" data-panel="search">
+                <i class="bi bi-search text-xl"></i>
+            </div>
+            <div class="sidebar-item p-2 mb-2 rounded hover:bg-gray-800" data-panel="git">
+                <i class="bi bi-git text-xl"></i>
+            </div>
+            <div class="sidebar-item p-2 mb-2 rounded hover:bg-gray-800" data-panel="debug">
+                <i class="bi bi-bug text-xl"></i>
+            </div>
+            <div class="sidebar-item p-2 mb-2 rounded hover:bg-gray-800" data-panel="extensions">
+                <i class="bi bi-puzzle text-xl"></i>
+            </div>
+            <div class="mt-auto sidebar-item p-2 rounded hover:bg-gray-800" data-panel="settings">
+                <i class="bi bi-gear text-xl"></i>
+            </div>
+        </div>
+        
+        <!-- Secondary Sidebar Resizer -->
+        <div class="resizer" id="sidebar-resizer"></div>
+
+        <!-- Secondary Sidebar (Explorer, etc.) -->
+        <div id="secondary-sidebar" class="bg-gray-800 w-60 border-r border-gray-700 flex flex-col overflow-hidden">
+            <!-- Explorer Panel -->
+            <div id="explorer-panel" class="panel active flex flex-col h-full">
+                <div class="p-2 text-xs uppercase tracking-wider text-gray-400 flex justify-between items-center">
+                    <span>Explorer</span>
+                    <div class="flex">
+                        <i class="bi bi-three-dots hover:text-white cursor-pointer" id="explorer-menu-btn"></i>
+                    </div>
+                </div>
+                
+                <!-- Explorer Context Menu -->
+                <div id="explorer-context-menu" class="dropdown-menu">
+                    <div class="dropdown-item" id="new-file-context">New File</div>
+                    <div class="dropdown-item" id="new-folder-context">New Folder</div>
+                    <div class="menu-separator"></div>
+                    <div class="dropdown-item" id="refresh-explorer">Refresh Explorer</div>
+                    <div class="dropdown-item" id="collapse-all">Collapse Folders</div>
+                </div>
+                
+                <div class="px-2 mb-2">
+                    <div class="flex items-center text-sm py-1 px-2 hover:bg-gray-700 rounded cursor-pointer" id="open-editors-section">
+                        <i class="bi bi-chevron-down mr-1"></i>
+                        <span>OPEN EDITORS</span>
+                    </div>
+                    <div class="ml-4" id="open-editors-list">
+                        <div class="explorer-file flex items-center text-sm py-1 px-2 rounded cursor-pointer active" data-file="index.html">
+                            <i class="bi bi-filetype-html mr-2 text-orange-400"></i>
+                            <span>index.html</span>
+                        </div>
+                        <div class="explorer-file flex items-center text-sm py-1 px-2 rounded cursor-pointer" data-file="styles.css">
+                            <i class="bi bi-filetype-css mr-2 text-blue-400"></i>
+                            <span>styles.css</span>
+                        </div>
+                        <div class="explorer-file flex items-center text-sm py-1 px-2 rounded cursor-pointer" data-file="app.js">
+                            <i class="bi bi-filetype-js mr-2 text-yellow-300"></i>
+                            <span>app.js</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-2 mb-2">
+                    <div class="flex items-center text-sm py-1 px-2 hover:bg-gray-700 rounded cursor-pointer" id="project-section">
+                        <i class="bi bi-chevron-down mr-1"></i>
+                        <span>MY PROJECT</span>
+                    </div>
+                    <div class="ml-4" id="project-files-list">
+                        <div class="explorer-file flex items-center text-sm py-1 px-2 rounded cursor-pointer" data-file="index.html">
+                            <i class="bi bi-filetype-html mr-2 text-orange-400"></i>
+                            <span>index.html</span>
+                        </div>
+                        <div class="explorer-file flex items-center text-sm py-1 px-2 rounded cursor-pointer" data-file="styles.css">
+                            <i class="bi bi-filetype-css mr-2 text-blue-400"></i>
+                            <span>styles.css</span>
+                        </div>
+                        <div class="explorer-file flex items-center text-sm py-1 px-2 rounded cursor-pointer" data-file="app.js">
+                            <i class="bi bi-filetype-js mr-2 text-yellow-300"></i>
+                            <span>app.js</span>
+                        </div>
+                        <div class="explorer-file flex items-center text-sm py-1 px-2 rounded cursor-pointer" data-file="README.md">
+                            <i class="bi bi-filetype-md mr-2 text-gray-400"></i>
+                            <span>README.md</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-2 mb-2">
+                    <div class="flex items-center text-sm py-1 px-2 hover:bg-gray-700 rounded cursor-pointer" id="node-modules-section">
+                        <i class="bi bi-chevron-right mr-1"></i>
+                        <span>NODE_MODULES</span>
+                    </div>
+                </div>
+                <div class="px-2 mb-2">
+                    <div class="flex items-center text-sm py-1 px-2 hover:bg-gray-700 rounded cursor-pointer" id="outline-section">
+                        <i class="bi bi-chevron-right mr-1"></i>
+                        <span>OUTLINE</span>
+                    </div>
+                </div>
+                <div class="px-2 mb-2">
+                    <div class="flex items-center text-sm py-1 px-2 hover:bg-gray-700 rounded cursor-pointer" id="timeline-section">
+                        <i class="bi bi-chevron-right mr-1"></i>
+                        <span>TIMELINE</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Panel -->
+            <div id="search-panel" class="panel hidden flex flex-col h-full">
+                <div class="p-2 text-xs uppercase tracking-wider text-gray-400">Search</div>
+                <div class="p-2">
+                    <input type="text" placeholder="Search in files" class="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm" id="search-input">
+                    <div class="flex mt-2 text-sm">
+                        <button class="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded-l border border-gray-600" id="search-btn">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        <button class="px-2 py-1 bg-gray-700 hover:bg-gray-600 border-t border-b border-gray-600" id="search-prev">
+                            <i class="bi bi-arrow-down"></i>
+                        </button>
+                        <button class="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded-r border border-gray-600" id="search-next">
+                            <i class="bi bi-arrow-up"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-2 text-sm text-gray-400" id="search-results">
+                    No results found
+                </div>
+            </div>
+
+            <!-- Git Panel -->
+            <div id="git-panel" class="panel hidden flex flex-col h-full">
+                <div class="p-2 text-xs uppercase tracking-wider text-gray-400">Source Control</div>
+                <div class="p-2 text-sm">
+                    <div class="mb-2">
+                        <input type="text" placeholder="Message (Ctrl+Enter to commit)" class="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm" id="commit-message">
+                    </div>
+                    <button class="w-full px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded text-white text-left" id="commit-btn">
+                        Commit
+                    </button>
+                    <div class="mt-4 text-gray-400" id="git-status">
+                        No changes detected in your workspace
+                    </div>
+                </div>
+            </div>
+
+            <!-- Debug Panel -->
+            <div id="debug-panel" class="panel hidden flex flex-col h-full">
+                <div class="p-2 text-xs uppercase tracking-wider text-gray-400">Run and Debug</div>
+                <div class="p-2 flex flex-col items-center justify-center h-full text-sm text-center">
+                    <p>To customize Run and Debug, create a launch.json file.</p>
+                    <button class="mt-2 px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded text-white" id="create-launch-json">
+                        Create a launch.json file
+                    </button>
+                </div>
+            </div>
+
+            <!-- Extensions Panel -->
+            <div id="extensions-panel" class="panel hidden flex flex-col h-full">
+                <div class="p-2 text-xs uppercase tracking-wider text-gray-400">Extensions</div>
+                <div class="p-2">
+                    <input type="text" placeholder="Search Extensions" class="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm" id="extensions-search">
+                </div>
+                <div class="p-2 flex-1 overflow-y-auto" id="extensions-list">
+                    <div class="mb-2 p-2 border border-gray-700 rounded bg-gray-750 hover:bg-gray-700 cursor-pointer">
+                        <div class="flex">
+                            <div class="mr-2 h-10 w-10 bg-blue-500 rounded flex items-center justify-center">
+                                <i class="bi bi-braces text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium">ESLint</div>
+                                <div class="text-xs text-gray-400">Microsoft</div>
+                                <div class="text-xs mt-1 flex">
+                                    <i class="bi bi-star-fill text-yellow-400 mr-1"></i>
+                                    <span>4.5/5 (2.3M)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-2 p-2 border border-gray-700 rounded bg-gray-750 hover:bg-gray-700 cursor-pointer">
+                        <div class="flex">
+                            <div class="mr-2 h-10 w-10 bg-purple-500 rounded flex items-center justify-center">
+                                <i class="bi bi-braces-asterisk text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium">Prettier</div>
+                                <div class="text-xs text-gray-400">Prettier</div>
+                                <div class="text-xs mt-1 flex">
+                                    <i class="bi bi-star-fill text-yellow-400 mr-1"></i>
+                                    <span>4.7/5 (3.1M)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-2 p-2 border border-gray-700 rounded bg-gray-750 hover:bg-gray-700 cursor-pointer">
+                        <div class="flex">
+                            <div class="mr-2 h-10 w-10 bg-green-500 rounded flex items-center justify-center">
+                                <i class="bi bi-palette text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium">Material Icon Theme</div>
+                                <div class="text-xs text-gray-400">Philipp Kief</div>
+                                <div class="text-xs mt-1 flex">
+                                    <i class="bi bi-star-fill text-yellow-400 mr-1"></i>
+                                    <span>4.8/5 (4.5M)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Panel -->
+            <div id="settings-panel" class="panel hidden flex flex-col h-full">
+                <div class="p-2 text-xs uppercase tracking-wider text-gray-400">Settings</div>
+                <div class="p-2">
+                    <input type="text" placeholder="Search settings" class="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm" id="settings-search">
+                </div>
+                <div class="flex-1 overflow-y-auto p-2">
+                    <div class="mb-4">
+                        <h3 class="text-sm font-semibold mb-2">Commonly Used</h3>
+                        <div class="ml-2 mb-2">
+                            <div class="text-sm mb-1">Editor: Font Size</div>
+                            <input type="number" value="14" class="w-16 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm" id="font-size-input">
+                        </div>
+                        <div class="ml-2 mb-2">
+                            <div class="text-sm mb-1">Editor: Font Family</div>
+                            <input type="text" value="'Source Code Pro', monospace" class="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm" id="font-family-input">
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <h3 class="text-sm font-semibold mb-2">Editor</h3>
+                        <div class="ml-2 mb-2 flex items-center">
+                            <input type="checkbox" checked id="word-wrap" class="mr-2">
+                            <label for="word-wrap" class="text-sm">Word Wrap</label>
+                        </div>
+                        <div class="ml-2 mb-2 flex items-center">
+                            <input type="checkbox" checked id="line-numbers" class="mr-2">
+                            <label for="line-numbers" class="text-sm">Line Numbers</label>
+                        </div>
+                        <div class="ml-2 mb-2 flex items-center">
+                            <input type="checkbox" checked id="minimap-toggle" class="mr-2">
+                            <label for="minimap-toggle" class="text-sm">Minimap</label>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <h3 class="text-sm font-semibold mb-2">Appearance</h3>
+                        <div class="ml-2 mb-2">
+                            <div class="text-sm mb-1">Color Theme</div>
+                            <select id="theme-selector" class="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm">
+                                <option value="theme-dark">Dark+ (default dark)</option>
+                                <option value="theme-light">Light+ (default light)</option>
+                                <option value="theme-high-contrast">High Contrast</option>
+                                <option value="monokai">Monokai</option>
+                                <option value="solarized-dark">Solarized Dark</option>
+                                <option value="solarized-light">Solarized Light</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main editor area -->
+        <div class="flex flex-col flex-1 bg-gray-900 overflow-hidden">
+            <!-- Tabs -->
+            <div class="bg-gray-800 flex border-b border-gray-700" id="tabs-container">
+                <div class="tab active flex items-center px-4 py-1 text-sm bg-gray-900 border-r border-gray-700" data-file="index.html">
+                    <i class="bi bi-filetype-html text-orange-400 mr-2"></i>
+                    <span>index.html</span>
+                    <i class="bi bi-x ml-2 hover:bg-gray-700 rounded cursor-pointer close-tab"></i>
+                </div>
+                <div class="tab flex items-center px-4 py-1 text-sm bg-gray-800 border-r border-gray-700" data-file="styles.css">
+                    <i class="bi bi-filetype-css text-blue-400 mr-2"></i>
+                    <span>styles.css</span>
+                    <i class="bi bi-x ml-2 hover:bg-gray-700 rounded cursor-pointer close-tab"></i>
+                </div>
+                <div class="tab flex items-center px-4 py-1 text-sm bg-gray-800 border-r border-gray-700" data-file="app.js">
+                    <i class="bi bi-filetype-js text-yellow-300 mr-2"></i>
+                    <span>app.js</span>
+                    <i class="bi bi-x ml-2 hover:bg-gray-700 rounded cursor-pointer close-tab"></i>
+                </div>
+            </div>
+
+            <!-- Editor content -->
+            <div class="flex-1 overflow-hidden relative">
+                <div id="editor-container" class="absolute inset-0 overflow-auto">
+                    <!-- Custom Editor Area -->
+                    <div id="editor" class="editor-area code-font p-0 h-full overflow-auto" contenteditable="true" spellcheck="false">
+                        <!-- Editor content will be dynamically generated -->
+                    </div>
+                    
+                    <!-- Empty File Message (shown when file is empty) -->
+                    <div id="empty-file-message" class="empty-file hidden">
+                        <span>Empty file. Start typing to edit.</span>
+                    </div>
+                </div>
+                
+                <!-- Minimap -->
+                <div class="minimap" id="minimap">
+                    <div class="minimap-content" id="minimap-content"></div>
+                </div>
+                
+                <!-- Find/Replace panel -->
+                <div class="find-replace p-2" id="find-replace-panel">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="text-sm font-medium">Find</div>
+                        <div>
+                            <i class="bi bi-x hover:bg-gray-700 rounded p-1 cursor-pointer" id="close-find"></i>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <input type="text" placeholder="Find" class="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm" id="find-input">
+                    </div>
+                    <div class="mb-2">
+                        <input type="text" placeholder="Replace" class="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm" id="replace-input">
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <button class="px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded text-white" id="replace-btn">Replace</button>
+                        <button class="px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded text-white" id="replace-all-btn">Replace All</button>
+                    </div>
+                </div>
+
+                <!-- Intellisense popup -->
+                <div class="intellisense" id="intellisense">
+                    <div class="suggestion selected">
+                        <i class="bi bi-code-square suggestion-icon text-purple-400"></i>
+                        <span>function</span>
+                    </div>
+                    <div class="suggestion">
+                        <i class="bi bi-code suggestion-icon text-blue-400"></i>
+                        <span>const</span>
+                    </div>
+                    <div class="suggestion">
+                        <i class="bi bi-code suggestion-icon text-blue-400"></i>
+                        <span>let</span>
+                    </div>
+                    <div class="suggestion">
+                        <i class="bi bi-code-slash suggestion-icon text-green-400"></i>
+                        <span>console</span>
+                    </div>
+                    <div class="suggestion">
+                        <i class="bi bi-code-slash suggestion-icon text-green-400"></i>
+                        <span>document</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Panel Container -->
+            <div id="bottom-panel-container" class="border-t border-gray-700">
+                <!-- Bottom Panel Tab Bar -->
+                <div class="bg-gray-800 flex text-sm border-b border-gray-700" id="bottom-panel-tabs">
+                    <div class="px-4 py-1 cursor-pointer hover:bg-gray-700 flex items-center" data-panel="problems">
+                        <i class="bi bi-bug mr-2"></i>
+                        <span>Problems</span>
+                    </div>
+                    <div class="px-4 py-1 cursor-pointer hover:bg-gray-700 flex items-center" data-panel="output">
+                        <i class="bi bi-journal-text mr-2"></i>
+                        <span>Output</span>
+                    </div>
+                    <div class="px-4 py-1 cursor-pointer hover:bg-gray-700 flex items-center active" data-panel="terminal">
+                        <i class="bi bi-terminal mr-2"></i>
+                        <span>Terminal</span>
+                    </div>
+                    <div class="ml-auto px-2 flex items-center">
+                        <i class="bi bi-x cursor-pointer hover:bg-gray-700 p-1 rounded" id="close-bottom-panel"></i>
+                    </div>
+                </div>
+
+                <!-- Bottom Panel Content -->
+                <div class="bottom-panel active bg-gray-900" id="bottom-panel">
+                    <!-- Problems Panel -->
+                    <div id="problems-panel" class="hidden h-full p-2 overflow-auto">
+                        <div class="text-sm text-gray-400">No problems have been detected in the workspace.</div>
+                    </div>
+                    
+                    <!-- Output Panel -->
+                    <div id="output-panel" class="hidden h-full p-2 overflow-auto">
+                        <div class="text-sm code-font text-gray-300" id="output-content"></div>
+                    </div>
+                    
+                    <!-- Terminal Panel -->
+                    <div id="terminal-panel" class="block h-full p-2 overflow-auto">
+                        <div class="text-sm code-font text-gray-300" id="terminal-content">
+                            <div class="mb-1">
+                                <span class="text-green-500">user@vscode</span>:<span class="text-blue-400">~/my-project</span>$ 
+                                <span id="terminal-command" class="inline-block"></span><span class="cursor inline-block"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Status bar -->
+    <div class="bg-blue-700 text-white text-xs flex items-center justify-between px-2 py-1">
+        <div class="flex items-center">
+            <div class="flex items-center mr-4">
+                <i class="bi bi-git mr-1"></i>
+                <span>main</span>
+                <i class="bi bi-arrow-up mr-1 ml-1"></i>
+                <i class="bi bi-arrow-down"></i>
+            </div>
+            <div class="flex items-center mr-4" id="error-warnings">
+                <i class="bi bi-x-circle mr-1"></i>
+                <span>0</span>
+                <i class="bi bi-exclamation-triangle ml-2 mr-1"></i>
+                <span>0</span>
+            </div>
+        </div>
+        <div class="flex items-center">
+            <div class="px-2 hover:bg-blue-600 cursor-pointer" id="line-col-status">
+                Ln 1, Col 1
+            </div>
+            <div class="px-2 hover:bg-blue-600 cursor-pointer" id="encoding-status">
+                UTF-8
+            </div>
+            <div class="px-2 hover:bg-blue-600 cursor-pointer" id="indent-status">
+                Spaces: 4
+            </div>
+            <div class="px-2 hover:bg-blue-600 cursor-pointer" id="eol-status">
+                LF
+            </div>
+            <div class="px-2 hover:bg-blue-600 cursor-pointer" id="language-status">
+                HTML
+            </div>
+            <div class="px-2 hover:bg-blue-600 cursor-pointer" id="notification">
+                <i class="bi bi-bell"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Command Palette -->
+    <div class="command-palette" id="command-palette">
+        <input type="text" class="command-input" placeholder="Type a command or search..." id="command-input">
+        <div class="command-results" id="command-results">
+            <div class="command-item selected">
+                <i class="bi bi-gear command-icon"></i>
+                <span>Settings</span>
+            </div>
+            <div class="command-item">
+                <i class="bi bi-file-earmark-plus command-icon"></i>
+                <span>New File</span>
+            </div>
+            <div class="command-item">
+                <i class="bi bi-palette command-icon"></i>
+                <span>Color Theme</span>
+            </div>
+            <div class="command-item">
+                <i class="bi bi-terminal command-icon"></i>
+                <span>Toggle Terminal</span>
+            </div>
+            <div class="command-item">
+                <i class="bi bi-search command-icon"></i>
+                <span>Find</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <!-- New File Modal -->
+    <div class="modal" id="new-file-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Create New File
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="block text-sm mb-1">File Name</label>
+                    <input type="text" class="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm" id="new-file-name">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1">File Type</label>
+                    <select class="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm" id="new-file-type">
+                        <option value=".html">HTML</option>
+                        <option value=".css">CSS</option>
+                        <option value=".js">JavaScript</option>
+                        <option value=".json">JSON</option>
+                        <option value=".md">Markdown</option>
+                        <option value=".txt">Text</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancel-new-file">Cancel</button>
+                <button class="btn btn-primary" id="create-new-file">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Folder Modal -->
+    <div class="modal" id="new-folder-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Create New Folder
+            </div>
+            <div class="modal-body">
+                <div>
+                    <label class="block text-sm mb-1">Folder Name</label>
+                    <input type="text" class="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm" id="new-folder-name">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancel-new-folder">Cancel</button>
+                <button class="btn btn-primary" id="create-new-folder">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Go to Line Modal -->
+    <div class="modal" id="go-to-line-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                Go to Line
+            </div>
+            <div class="modal-body">
+                <div>
+                    <label class="block text-sm mb-1">Line Number</label>
+                    <input type="number" min="1" class="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm" id="go-to-line-input">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancel-go-to-line">Cancel</button>
+                <button class="btn btn-primary" id="confirm-go-to-line">Go</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Modal -->
+    <div class="modal" id="about-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                About VS Code Clone
+            </div>
+            <div class="modal-body text-center p-4">
+                <div class="mb-2 text-lg font-semibold">VS Code Clone</div>
+                <div class="mb-4 text-sm">Version 1.0.0</div>
+                <div class="text-sm text-gray-400">
+                    <p class="mb-1">This is a web-based clone of Visual Studio Code.</p>
+                    <p>Created with HTML, CSS, and JavaScript.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="close-about-modal">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- File context menu -->
+    <div class="context-menu" id="file-context-menu">
+        <div class="dropdown-item" id="open-file-context">Open</div>
+        <div class="dropdown-item" id="rename-file-context">Rename</div>
+        <div class="dropdown-item" id="delete-file-context">Delete</div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item" id="copy-file-context">Copy</div>
+        <div class="dropdown-item" id="paste-file-context">Paste</div>
+        <div class="menu-separator"></div>
+        <div class="dropdown-item" id="new-file-here-context">New File</div>
+        <div class="dropdown-item" id="new-folder-here-context">New Folder</div>
+    </div>
+
+    <script>
+        // File content objects
+        const fileContents = {
+            'index.html': `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Project</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to My Project</h1>
+        <p>This is a sample project created with HTML, CSS and JavaScript.</p>
+        <button id="myButton">Click Me!</button>
+    </div>
+    <script src="app.js"><\/script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
